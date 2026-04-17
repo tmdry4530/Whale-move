@@ -1,0 +1,34 @@
+.omx/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets / local env
+.env
+.env.local
+*.local
+
+# Node
+node_modules/
+apps/*/node_modules/
+apps/*/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pipelines/.venv/
+
+# Pipeline outputs / caches
+pipelines/data/crawled/
+pipelines/data/processed/
+*.csv
+
+# Logs
+*.log
+
+docs/
