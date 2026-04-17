@@ -17,14 +17,14 @@ export function categoryColor(category: string): string {
   switch (category) {
     case 'crash':
     case 'crisis':
-      return '#ef4444'
+      return 'rgba(255, 255, 255, 0.8)'
     case 'rally':
-      return '#22c55e'
+      return 'rgba(255, 255, 255, 0.6)'
     case 'mania':
-      return '#facc15'
+      return 'rgba(255, 255, 255, 0.4)'
     case 'regulation':
-      return '#38bdf8'
+      return 'rgba(255, 255, 255, 0.3)'
     default:
-      return '#94a3b8'
+      return 'rgba(255, 255, 255, 0.2)'
   }
 }

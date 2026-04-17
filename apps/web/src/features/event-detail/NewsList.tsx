@@ -8,12 +8,12 @@ export function NewsList({ items }: { items: NewsArticle[] }) {
   return (
     <ul className="space-y-3">
       {items.map((item) => (
-        <li key={item.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.source}</div>
-          <a className="mt-1 block font-medium text-slate-100 hover:text-sky-300" href={item.url} target="_blank" rel="noreferrer">
+        <li key={item.id} className="rounded-none border border-brand-border bg-brand-surface p-[24px]">
+          <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">{item.source}</div>
+          <a className="mt-4 block font-body text-[22px] text-brand-text transition-colors hover:text-brand-muted" href={item.url} target="_blank" rel="noreferrer">
             {item.title}
           </a>
-          {item.summary ? <p className="mt-2 text-sm text-slate-300">{item.summary}</p> : null}
+          {item.summary ? <p className="mt-2 text-base text-brand-muted font-body leading-relaxed">{item.summary}</p> : null}
         </li>
       ))}
     </ul>

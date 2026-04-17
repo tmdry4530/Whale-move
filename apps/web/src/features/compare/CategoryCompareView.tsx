@@ -26,23 +26,32 @@ export function CategoryCompareView({ events }: { events: EventRecord[] }) {
   })
 
   const chartData = Array.from(grouped.entries()).map(([category, values]) => ({
-    category,
+    category:
+      category === 'crisis'
+        ? '위기'
+        : category === 'crash'
+          ? '폭락'
+          : category === 'rally'
+            ? '호재'
+            : category === 'mania'
+              ? '과열'
+              : '규제',
     avgWhaleVolumeUsd: values.reduce((sum, value) => sum + value, 0) / values.length
   }))
 
   return (
-    <SectionCard title="이벤트 유형별 평균 반응" eyebrow="Compare view">
-      <p className="mb-4 text-sm text-slate-300">
+    <SectionCard title="이벤트 유형별 평균 반응" eyebrow="이벤트 비교">
+      <p className="mb-6 text-base text-brand-muted font-body leading-relaxed">
         폭락, 호재, 규제, 과열 이벤트를 평균내 보면 어떤 종류의 사건에서 큰 지갑이 더 크게 움직였는지 비교할 수 있다.
       </p>
       <div className="h-[280px] w-full">
         <ResponsiveContainer>
           <BarChart data={chartData}>
-            <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-            <XAxis dataKey="category" tick={{ fill: '#cbd5e1' }} />
-            <YAxis tick={{ fill: '#cbd5e1' }} tickFormatter={(value) => formatCompactNumber(Number(value))} />
-            <Tooltip formatter={(value: number) => `$${formatCompactNumber(value)}`} />
-            <Bar dataKey="avgWhaleVolumeUsd" fill="#a855f7" radius={[10, 10, 0, 0]} />
+            <CartesianGrid stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
+            <XAxis dataKey="category" tick={{ fill: 'rgba(255, 255, 255, 0.5)', fontFamily: 'var(--font-body)' }} />
+            <YAxis tick={{ fill: 'rgba(255, 255, 255, 0.5)', fontFamily: 'var(--font-body)' }} tickFormatter={(value) => formatCompactNumber(Number(value))} />
+            <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 0, fontFamily: 'var(--font-body)', color: '#fff' }} formatter={(value: number) => `$${formatCompactNumber(value)}`} />
+            <Bar dataKey="avgWhaleVolumeUsd" fill="#ffffff" radius={[0, 0, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
