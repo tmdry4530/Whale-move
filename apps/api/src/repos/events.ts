@@ -74,6 +74,7 @@ export async function getEventWindow(db: Sql, eventId: string): Promise<EventWin
     ethPriceUsd: string | null
     btcPriceUsd: string | null
     fearGreedValue: number | null
+    newsVolume: number
   }[]>`
     SELECT
       ew.day_offset AS "dayOffset",
@@ -83,7 +84,14 @@ export async function getEventWindow(db: Sql, eventId: string): Promise<EventWin
       ew.cex_outflow_usd::text AS "cexOutflowUsd",
       ew.eth_price_usd::text AS "ethPriceUsd",
       ew.btc_price_usd::text AS "btcPriceUsd",
-      ew.fear_greed_value AS "fearGreedValue"
+      ew.fear_greed_value AS "fearGreedValue",
+      COALESCE((
+        SELECT count(*)::int
+        FROM news_articles AS na
+        WHERE na.event_id = ew.event_id
+          AND na.published_at IS NOT NULL
+          AND (na.published_at AT TIME ZONE 'UTC')::date = (e.event_date + ew.day_offset)
+      ), 0) AS "newsVolume"
     FROM event_windows AS ew
     JOIN events AS e ON e.id = ew.event_id
     WHERE ew.event_id = ${eventId}

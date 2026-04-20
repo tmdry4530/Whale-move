@@ -53,7 +53,8 @@ vi.mock('../src/repos/events.js', () => ({
       cexOutflowUsd: '25.00',
       ethPriceUsd: '1200.00',
       btcPriceUsd: '18000.00',
-      fearGreedValue: 20
+      fearGreedValue: 20,
+      newsVolume: index % 3
     })),
   getEventNews: async () => [
     {
@@ -151,8 +152,9 @@ describe('api routes', () => {
   it('returns event window', async () => {
     const response = await app.inject({ method: 'GET', url: '/api/events/ftx_collapse/window' })
     expect(response.statusCode).toBe(200)
-    const payload = response.json() as { window: Array<{ dayOffset: number }> }
+    const payload = response.json() as { window: Array<{ dayOffset: number; newsVolume: number }> }
     expect(payload.window).toHaveLength(15)
+    expect(payload.window[0]?.newsVolume).toBe(0)
   })
 
   it('returns event news', async () => {

@@ -31,6 +31,8 @@ export function EventDetailPanel({ eventId }: { eventId: string | null }) {
   const visibleHypothesisLabels = hypothesisCards
     .map((card) => (card.badge.split(' · ')[0] ?? card.badge).replace('가설 ', ''))
     .join('·')
+  const undatedNewsCount = (newsQuery.data ?? []).filter((item) => item.publishedAt === null).length
+  const hasDatedNewsVolume = windowQuery.data.window.some((row) => row.newsVolume > 0)
   const hasInflowData = windowQuery.data.window.some((row) => row.cexInflowUsd !== null)
   const hasOutflowData = windowQuery.data.window.some((row) => row.cexOutflowUsd !== null)
   const hasFearGreedData = windowQuery.data.window.some((row) => row.fearGreedValue !== null)
@@ -128,6 +130,31 @@ export function EventDetailPanel({ eventId }: { eventId: string | null }) {
           <div className="mt-2 text-lg font-body text-brand-text">{formatUsdString(summary.ethPrice.after === null ? null : String(summary.ethPrice.after.toFixed(2)))}</div>
           <p className="mt-2 text-sm font-body text-brand-muted">사건 이후 시장 해석을 읽는 지표</p>
         </div>
+      </div>
+      <div className="mt-4 border border-slate-300/30 bg-slate-300/5 p-4">
+        <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">뉴스 볼륨 보조 지표</div>
+        {hasDatedNewsVolume ? (
+          <p className="mt-2 text-base leading-relaxed text-brand-text font-body">
+            사건일 뉴스 기사 수는 <span className="font-semibold">{summary.newsVolume.eventDay ?? 0}건</span>이고,
+            전후 7일 중 가장 많이 기사화된 날은 <span className="font-semibold">{summary.peakNewsVolume}건</span>이었다.
+            아래 회색 막대로 뉴스 반응이 온체인 움직임보다 먼저 터졌는지, 뒤따랐는지 함께 읽을 수 있다.
+          </p>
+        ) : undatedNewsCount > 0 ? (
+          <p className="mt-2 text-base leading-relaxed text-brand-text font-body">
+            현재 헤드라인은 있지만 발행일이 확인된 기사 수가 부족해 회색 뉴스 볼륨 막대는 표시되지 않는다.
+            날짜 정보가 확인된 기사가 쌓이면 이 구간에서 온체인 움직임과 뉴스 반응의 선후를 직접 비교할 수 있다.
+          </p>
+        ) : (
+          <p className="mt-2 text-base leading-relaxed text-brand-text font-body">
+            이 사건 구간에는 집계 가능한 뉴스 볼륨 데이터가 없어, 현재는 온체인 지표 중심으로 해석한다.
+          </p>
+        )}
+        {undatedNewsCount > 0 ? (
+          <p className="mt-3 text-sm leading-relaxed text-brand-muted font-body">
+            다만 현재 헤드라인 중 <span className="font-semibold text-brand-text">{undatedNewsCount}건</span>은 발행일 정보가 없어
+            뉴스 볼륨 막대에는 포함되지 않았다. 즉, 회색 막대는 <span className="font-semibold text-brand-text">날짜가 확인된 기사만</span> 집계한 값이다.
+          </p>
+        ) : null}
       </div>
       <div className="mt-6">
         <div className="mb-3">

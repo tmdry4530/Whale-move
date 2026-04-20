@@ -45,7 +45,8 @@ const baseWindow = Array.from({ length: 15 }, (_, index) => ({
   cexOutflowUsd: '25',
   ethPriceUsd: '1200',
   btcPriceUsd: '18000',
-  fearGreedValue: 20
+  fearGreedValue: 20,
+  newsVolume: index % 4
 }))
 
 vi.mock('../src/api/endpoints', () => ({
@@ -65,7 +66,8 @@ vi.mock('../src/api/endpoints', () => ({
                     ...row,
                     cexInflowUsd: null,
                     cexOutflowUsd: null,
-                    fearGreedValue: null
+                    fearGreedValue: null,
+                    newsVolume: 0
                   }))
                 : baseWindow
           }
@@ -123,6 +125,7 @@ describe('App', () => {
     expect(screen.getAllByText('거래소 입금').length).toBeGreaterThan(0)
     expect(screen.getAllByText('거래소 출금').length).toBeGreaterThan(0)
     expect(screen.getAllByText('공포·탐욕 지수').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('뉴스 볼륨').length).toBeGreaterThan(0)
     expect(screen.getByText('그때 나온 헤드라인')).toBeInTheDocument()
     expect(screen.getByText('FTX 뉴스')).toBeInTheDocument()
     expect(screen.getByText('전체 21개 사건')).toBeInTheDocument()
@@ -170,6 +173,10 @@ describe('App', () => {
     expect(scopeNotice).not.toBeNull()
     expect(scopeNotice?.textContent).toContain('거래소 입금, 거래소 출금, 공포·탐욕 지수')
     expect(scopeNotice?.textContent).toContain('부분 검증')
+    const newsVolumeNotice = screen.getByText('뉴스 볼륨 보조 지표').parentElement
+    expect(newsVolumeNotice).not.toBeNull()
+    expect(newsVolumeNotice?.textContent).toContain('발행일이 확인된 기사 수가 부족해 회색 뉴스 볼륨 막대는 표시되지 않는다')
+    expect(newsVolumeNotice?.textContent).toContain('발행일 정보가 없어 뉴스 볼륨 막대에는 포함되지 않았다')
     expect(screen.getByText('이벤트 2 뉴스')).toBeInTheDocument()
   })
 

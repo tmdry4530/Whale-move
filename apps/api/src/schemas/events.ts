@@ -21,7 +21,8 @@ export const eventWindowRowSchema = z.object({
   cexOutflowUsd: z.string().nullable(),
   ethPriceUsd: z.string().nullable(),
   btcPriceUsd: z.string().nullable(),
-  fearGreedValue: z.number().int().nullable()
+  fearGreedValue: z.number().int().nullable(),
+  newsVolume: z.number().int()
 })
 
 export const newsArticleSchema = z.object({

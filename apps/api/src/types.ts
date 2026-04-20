@@ -23,6 +23,7 @@ export type EventWindowRow = {
   ethPriceUsd: string | null
   btcPriceUsd: string | null
   fearGreedValue: number | null
+  newsVolume: number
 }
 
 export type NewsArticle = {

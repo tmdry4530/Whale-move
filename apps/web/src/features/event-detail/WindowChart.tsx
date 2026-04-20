@@ -12,13 +12,15 @@ export function WindowChart({ rows }: { rows: EventWindow[] }) {
     whaleVolumeUsdNumber: row.whaleVolumeUsd ? Number(row.whaleVolumeUsd) : null,
     cexInflowUsdNumber: row.cexInflowUsd ? Number(row.cexInflowUsd) : null,
     cexOutflowUsdNumber: row.cexOutflowUsd ? Number(row.cexOutflowUsd) : null,
-    fearGreedValueNumber: row.fearGreedValue
+    fearGreedValueNumber: row.fearGreedValue,
+    newsVolumeNumber: row.newsVolume
   }))
 
   const hasWhaleData = data.some((row) => row.whaleVolumeUsdNumber !== null)
   const hasInflowData = data.some((row) => row.cexInflowUsdNumber !== null)
   const hasOutflowData = data.some((row) => row.cexOutflowUsdNumber !== null)
   const hasFearGreedData = data.some((row) => row.fearGreedValueNumber !== null)
+  const hasNewsVolumeData = data.some((row) => row.newsVolumeNumber > 0)
   const missingSeriesCount = [hasInflowData, hasOutflowData, hasFearGreedData].filter((value) => !value).length
 
   return (
@@ -46,6 +48,12 @@ export function WindowChart({ rows }: { rows: EventWindow[] }) {
           <span className="inline-flex items-center gap-2 border border-fuchsia-300/40 bg-fuchsia-300/10 px-3 py-1 text-fuchsia-100">
             <span className="h-2.5 w-2.5 rounded-full bg-fuchsia-300" />
             공포·탐욕 지수
+          </span>
+        ) : null}
+        {hasNewsVolumeData ? (
+          <span className="inline-flex items-center gap-2 border border-slate-300/30 bg-slate-300/10 px-3 py-1 text-slate-100">
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+            뉴스 볼륨
           </span>
         ) : null}
       </div>
@@ -86,6 +94,14 @@ export function WindowChart({ rows }: { rows: EventWindow[] }) {
               stroke="rgba(255, 255, 255, 0.28)"
             />
           ) : null}
+          {hasNewsVolumeData ? (
+            <YAxis
+              yAxisId="news"
+              orientation="right"
+              hide
+              allowDecimals={false}
+            />
+          ) : null}
           <Tooltip
             contentStyle={{ backgroundColor: '#0b0d12', border: '1px solid rgba(255, 255, 255, 0.24)', borderRadius: 0, fontFamily: 'var(--font-body)', color: '#fff' }}
             formatter={(value, name) =>
@@ -93,9 +109,12 @@ export function WindowChart({ rows }: { rows: EventWindow[] }) {
                 ? '데이터 없음'
                 : name === '공포·탐욕 지수'
                   ? `${value}`
+                  : name === '뉴스 볼륨'
+                    ? `${value}건`
                   : `$${formatCompactNumber(Number(value))}`
             }
           />
+          {hasNewsVolumeData ? <Bar yAxisId="news" dataKey="newsVolumeNumber" fill="rgba(226, 232, 240, 0.32)" name="뉴스 볼륨" barSize={16} /> : null}
           {hasWhaleData ? <Area yAxisId="usd" type="monotone" dataKey="whaleVolumeUsdNumber" fill="rgba(56, 189, 248, 0.16)" stroke="#38bdf8" strokeWidth={2.6} name="고래 송금" /> : null}
           {hasInflowData ? <Bar yAxisId="usd" dataKey="cexInflowUsdNumber" fill="#f59e0b" name="거래소 입금" /> : null}
           {hasOutflowData ? <Bar yAxisId="usd" dataKey="cexOutflowUsdNumber" fill="#10b981" name="거래소 출금" /> : null}

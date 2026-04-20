@@ -29,7 +29,8 @@ describe('WindowChart', () => {
             cexOutflowUsd: '25',
             ethPriceUsd: '1200',
             btcPriceUsd: '18000',
-            fearGreedValue: 35
+            fearGreedValue: 35,
+            newsVolume: 2
           },
           {
             dayOffset: 0,
@@ -39,7 +40,8 @@ describe('WindowChart', () => {
             cexOutflowUsd: '40',
             ethPriceUsd: '1180',
             btcPriceUsd: '17500',
-            fearGreedValue: 20
+            fearGreedValue: 20,
+            newsVolume: 5
           },
           {
             dayOffset: 1,
@@ -49,7 +51,8 @@ describe('WindowChart', () => {
             cexOutflowUsd: '55',
             ethPriceUsd: '1210',
             btcPriceUsd: '17800',
-            fearGreedValue: 25
+            fearGreedValue: 25,
+            newsVolume: 1
           }
         ]}
       />
@@ -60,5 +63,6 @@ describe('WindowChart', () => {
     expect(screen.getAllByText('거래소 입금').length).toBeGreaterThan(0)
     expect(screen.getAllByText('거래소 출금').length).toBeGreaterThan(0)
     expect(screen.getAllByText('공포·탐욕 지수').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('뉴스 볼륨').length).toBeGreaterThan(0)
   })
 })

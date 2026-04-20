@@ -52,7 +52,8 @@ const windowRowSchema = {
     cexOutflowUsd: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     ethPriceUsd: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     btcPriceUsd: { anyOf: [{ type: 'string' }, { type: 'null' }] },
-    fearGreedValue: { anyOf: [{ type: 'integer' }, { type: 'null' }] }
+    fearGreedValue: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+    newsVolume: { type: 'integer' }
   },
   required: [
     'dayOffset',
@@ -62,7 +63,8 @@ const windowRowSchema = {
     'cexOutflowUsd',
     'ethPriceUsd',
     'btcPriceUsd',
-    'fearGreedValue'
+    'fearGreedValue',
+    'newsVolume'
   ]
 } as const
 

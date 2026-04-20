@@ -7,6 +7,7 @@ type EventWindow = z.infer<typeof eventWindowSchema>
 type EventWindowResponse = z.infer<typeof eventWindowResponseSchema>
 
 type MetricKey = 'whaleVolumeUsd' | 'cexInflowUsd' | 'cexOutflowUsd' | 'ethPriceUsd'
+type CountKey = 'newsVolume'
 
 export type HypothesisVerdict = 'supported' | 'mixed' | 'inconclusive' | 'rejected'
 
@@ -24,9 +25,11 @@ export type EventAnalysisSummary = {
   inflow: MetricSnapshot
   outflow: MetricSnapshot
   ethPrice: MetricSnapshot
+  newsVolume: MetricSnapshot
   peakWhaleVolume: number
   peakInflow: number
   peakOutflow: number
+  peakNewsVolume: number
 }
 
 export type HypothesisCard = {
@@ -86,6 +89,24 @@ function peakMetric(rows: EventWindow[], key: 'whaleVolumeUsd' | 'cexInflowUsd' 
   return rows.reduce((peak, row) => Math.max(peak, toNumber(row[key]) ?? 0), 0)
 }
 
+function buildCountSnapshot(rows: EventWindow[], key: CountKey): MetricSnapshot {
+  const beforeRows = rows.filter((row) => row.dayOffset >= -7 && row.dayOffset <= -1)
+  const afterRows = rows.filter((row) => row.dayOffset >= 1 && row.dayOffset <= 7)
+  const eventDayRow = rows.find((row) => row.dayOffset === 0) ?? null
+
+  const before = average(beforeRows.map((row) => row[key]))
+  const eventDay = eventDayRow?.[key] ?? null
+  const after = average(afterRows.map((row) => row[key]))
+
+  return {
+    before,
+    eventDay,
+    after,
+    eventVsBeforePct: percentChange(eventDay, before),
+    afterVsBeforePct: percentChange(after, before)
+  }
+}
+
 export function analyzeEventWindow(rows: EventWindow[]): EventAnalysisSummary {
   return {
     eventDayRow: rows.find((row) => row.dayOffset === 0) ?? null,
@@ -93,9 +114,11 @@ export function analyzeEventWindow(rows: EventWindow[]): EventAnalysisSummary {
     inflow: buildMetricSnapshot(rows, 'cexInflowUsd'),
     outflow: buildMetricSnapshot(rows, 'cexOutflowUsd'),
     ethPrice: buildMetricSnapshot(rows, 'ethPriceUsd'),
+    newsVolume: buildCountSnapshot(rows, 'newsVolume'),
     peakWhaleVolume: peakMetric(rows, 'whaleVolumeUsd'),
     peakInflow: peakMetric(rows, 'cexInflowUsd'),
-    peakOutflow: peakMetric(rows, 'cexOutflowUsd')
+    peakOutflow: peakMetric(rows, 'cexOutflowUsd'),
+    peakNewsVolume: rows.reduce((peak, row) => Math.max(peak, row.newsVolume), 0)
   }
 }
 

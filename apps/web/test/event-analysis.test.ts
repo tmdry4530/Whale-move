@@ -8,11 +8,11 @@ import {
 } from '../src/lib/eventAnalysis'
 
 const sampleWindow = [
-  { dayOffset: -2, date: '2022-11-09', whaleVolumeUsd: '100', cexInflowUsd: '50', cexOutflowUsd: '25', ethPriceUsd: '1100', btcPriceUsd: '18000', fearGreedValue: 30 },
-  { dayOffset: -1, date: '2022-11-10', whaleVolumeUsd: '100', cexInflowUsd: '50', cexOutflowUsd: '25', ethPriceUsd: '1100', btcPriceUsd: '18000', fearGreedValue: 28 },
-  { dayOffset: 0, date: '2022-11-11', whaleVolumeUsd: '300', cexInflowUsd: '150', cexOutflowUsd: '80', ethPriceUsd: '1000', btcPriceUsd: '17000', fearGreedValue: 20 },
-  { dayOffset: 1, date: '2022-11-12', whaleVolumeUsd: '220', cexInflowUsd: '70', cexOutflowUsd: '60', ethPriceUsd: '900', btcPriceUsd: '16500', fearGreedValue: 18 },
-  { dayOffset: 2, date: '2022-11-13', whaleVolumeUsd: '200', cexInflowUsd: '60', cexOutflowUsd: '50', ethPriceUsd: '880', btcPriceUsd: '16400', fearGreedValue: 17 }
+  { dayOffset: -2, date: '2022-11-09', whaleVolumeUsd: '100', cexInflowUsd: '50', cexOutflowUsd: '25', ethPriceUsd: '1100', btcPriceUsd: '18000', fearGreedValue: 30, newsVolume: 1 },
+  { dayOffset: -1, date: '2022-11-10', whaleVolumeUsd: '100', cexInflowUsd: '50', cexOutflowUsd: '25', ethPriceUsd: '1100', btcPriceUsd: '18000', fearGreedValue: 28, newsVolume: 3 },
+  { dayOffset: 0, date: '2022-11-11', whaleVolumeUsd: '300', cexInflowUsd: '150', cexOutflowUsd: '80', ethPriceUsd: '1000', btcPriceUsd: '17000', fearGreedValue: 20, newsVolume: 6 },
+  { dayOffset: 1, date: '2022-11-12', whaleVolumeUsd: '220', cexInflowUsd: '70', cexOutflowUsd: '60', ethPriceUsd: '900', btcPriceUsd: '16500', fearGreedValue: 18, newsVolume: 2 },
+  { dayOffset: 2, date: '2022-11-13', whaleVolumeUsd: '200', cexInflowUsd: '60', cexOutflowUsd: '50', ethPriceUsd: '880', btcPriceUsd: '16400', fearGreedValue: 17, newsVolume: 1 }
 ] as const
 
 describe('eventAnalysis', () => {
@@ -24,6 +24,8 @@ describe('eventAnalysis', () => {
     expect(summary.inflow.after).toBe(65)
     expect(summary.inflow.eventVsBeforePct).toBe(200)
     expect(summary.ethPrice.afterVsBeforePct).toBeCloseTo(-19.09, 2)
+    expect(summary.newsVolume.eventDay).toBe(6)
+    expect(summary.peakNewsVolume).toBe(6)
   })
 
   it('builds readable hypothesis cards with verdict labels', () => {
