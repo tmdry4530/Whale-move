@@ -1,3 +1,4 @@
+# Local OMX state
 .omx/
 
 # OS / editor
@@ -26,9 +27,12 @@ pipelines/.venv/
 # Pipeline outputs / caches
 pipelines/data/crawled/
 pipelines/data/processed/
-*.csv
+pipelines/data/raw/
+exchange_flow_data/
+price_data/
+whale_data/
 
 # Logs
 *.log
 
-docs/
+dogfood-output/

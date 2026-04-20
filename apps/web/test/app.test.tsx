@@ -59,7 +59,15 @@ vi.mock('../src/api/endpoints', () => ({
         ? undefined
         : {
             event: events.find((event) => event.id === eventId) ?? events[0],
-            window: baseWindow
+            window:
+              eventId === 'event_2'
+                ? baseWindow.map((row) => ({
+                    ...row,
+                    cexInflowUsd: null,
+                    cexOutflowUsd: null,
+                    fearGreedValue: null
+                  }))
+                : baseWindow
           }
   }),
   useEventNews: (eventId: string | null) => ({
@@ -107,6 +115,14 @@ describe('App', () => {
 
     expect(screen.getByText('시장이 흔들릴 때, 큰 지갑은 무엇을 했을까?')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'FTX 파산' })).toBeInTheDocument()
+    expect(screen.getByText(/모바일에서는 차트를 좌우로 밀어 날짜 축과 이벤트 위치를 더 선명하게 볼 수 있다/)).toBeInTheDocument()
+    expect(screen.getByText('읽는 순서')).toBeInTheDocument()
+    expect(screen.getByText(/가설 → 검증 → 결론/)).toBeInTheDocument()
+    expect(screen.getByText('가설 1 · 판정 보류')).toBeInTheDocument()
+    expect(screen.getAllByText('고래 송금').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('거래소 입금').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('거래소 출금').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('공포·탐욕 지수').length).toBeGreaterThan(0)
     expect(screen.getByText('그때 나온 헤드라인')).toBeInTheDocument()
     expect(screen.getByText('FTX 뉴스')).toBeInTheDocument()
     expect(screen.getByText('전체 21개 사건')).toBeInTheDocument()
@@ -133,12 +149,27 @@ describe('App', () => {
     expect(screen.getAllByText(/^🇰🇷/).length).toBe(6)
   })
 
+  it('shows hypothesis-led comparison cards in the compare tab', () => {
+    window.history.replaceState({}, '', '/?tab=compare&event=ftx_collapse')
+    render(<App />)
+
+    expect(screen.getByRole('heading', { name: '가설 검증 비교실' })).toBeInTheDocument()
+    expect(screen.getByText('가설 1')).toBeInTheDocument()
+    expect(screen.getByText(/위기·폭락 이벤트는 사건일 거래소 입금이 가장 크게 튄다/)).toBeInTheDocument()
+    expect(screen.getByText('사건 전 7일 평균 대비 사건 후 7일 가격 변화율')).toBeInTheDocument()
+    expect(screen.getByText('카테고리별 사건일 변화율')).toBeInTheDocument()
+  })
+
   it('updates the detail panel immediately when another event is selected', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('link', { name: '이벤트 2 보기' }))
     expect(window.location.search).toContain('event=event_2')
     expect(screen.getByRole('heading', { name: '이벤트 2' })).toBeInTheDocument()
+    const scopeNotice = screen.getByText('데이터 범위 안내').parentElement
+    expect(scopeNotice).not.toBeNull()
+    expect(scopeNotice?.textContent).toContain('거래소 입금, 거래소 출금, 공포·탐욕 지수')
+    expect(scopeNotice?.textContent).toContain('부분 검증')
     expect(screen.getByText('이벤트 2 뉴스')).toBeInTheDocument()
   })
 

@@ -9,11 +9,18 @@ import { registerEventRoutes } from './routes/events.js'
 import { registerHealthRoute } from './routes/health.js'
 import { registerSeriesRoutes } from './routes/series.js'
 
+const defaultCorsOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173']
+
+function resolveCorsOrigins(): string[] {
+  const configured = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean)
+  return configured && configured.length > 0 ? configured : defaultCorsOrigins
+}
+
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({ logger: false })
 
   await app.register(cors, {
-    origin: (process.env.CORS_ORIGIN ?? 'http://localhost:5173').split(',')
+    origin: resolveCorsOrigins()
   })
 
   await app.register(swagger, {

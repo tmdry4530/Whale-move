@@ -58,12 +58,16 @@ export function MainTimeline({
           </p>
         </div>
       ) : null}
-      <div className="h-[380px] w-full">
-        <ResponsiveContainer>
-          <LineChart data={chartData} margin={{ top: 16, right: 24, bottom: 16, left: 0 }}>
+      <div className="mb-3 text-sm leading-relaxed text-brand-muted font-body">
+        모바일에서는 차트를 좌우로 밀어 날짜 축과 이벤트 위치를 더 선명하게 볼 수 있다.
+      </div>
+      <div className="overflow-x-auto">
+        <div className="h-[380px] min-w-[860px] w-full">
+          <ResponsiveContainer>
+            <LineChart data={chartData} margin={{ top: 16, right: 24, bottom: 16, left: 0 }}>
             <XAxis
               dataKey="weekStart"
-              minTickGap={36}
+              minTickGap={54}
               tick={{ fill: 'rgba(255, 255, 255, 0.78)', fontSize: 12, fontFamily: 'var(--font-body)' }}
               stroke="rgba(255, 255, 255, 0.2)"
             />
@@ -108,8 +112,9 @@ export function MainTimeline({
                 }}
               />
             ))}
-          </LineChart>
-        </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
       <div className="mt-6 flex flex-wrap gap-2">
         <button
