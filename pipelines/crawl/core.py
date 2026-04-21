@@ -13,13 +13,23 @@ from urllib.error import HTTPError, URLError
 from crawl.models import CrawlRecord, JobSnapshot
 
 API_BASE = os.environ.get("CLOUDFLARE_CRAWL_BASE_URL", "https://api.cloudflare.com/client/v4")
-ACCOUNT_ID = os.environ["CLOUDFLARE_ACCOUNT_ID"]
-API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
 CACHE_DIR = Path(__file__).resolve().parents[1] / "data" / "crawled"
 
 
+def _require_credentials() -> tuple[str, str]:
+    account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
+    api_token = os.environ.get("CLOUDFLARE_API_TOKEN")
+    if not account_id or not api_token:
+        raise RuntimeError(
+            "Cloudflare crawl credentials are required for this operation "
+            "(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN)."
+        )
+    return account_id, api_token
+
+
 def build_crawl_url(path: str) -> str:
-    return f"{API_BASE}/accounts/{ACCOUNT_ID}/browser-rendering/crawl{path}"
+    account_id, _ = _require_credentials()
+    return f"{API_BASE}/accounts/{account_id}/browser-rendering/crawl{path}"
 
 
 def _request(
@@ -27,6 +37,7 @@ def _request(
     method: str = "GET",
     payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    _, api_token = _require_credentials()
     data = json.dumps(payload).encode() if payload is not None else None
     for attempt in range(3):
         request = urllib.request.Request(
@@ -34,7 +45,7 @@ def _request(
             data=data,
             method=method,
             headers={
-                "Authorization": f"Bearer {API_TOKEN}",
+                "Authorization": f"Bearer {api_token}",
                 "Content-Type": "application/json",
             },
         )

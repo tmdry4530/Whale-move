@@ -13,6 +13,14 @@ from crawl.models import ArticleCandidate, EventRecord
 DATE_PATH_RE = re.compile(r"/(20\d{2})/(\d{2})/(\d{2})/")
 DATE_INLINE_RE = re.compile(r"(20\d{2})-(\d{2})-(\d{2})")
 LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
+TOKEN_RE = re.compile(r"[A-Za-z0-9가-힣]+")
+STOPWORDS = {
+    "the", "and", "for", "with", "from", "into", "that", "this", "will", "after",
+    "before", "amid", "over", "under", "between", "through", "about", "update",
+    "global", "market", "first", "all", "time", "high", "november", "failure",
+    "shock", "order", "special", "reporting", "act", "virtual", "asset",
+    "spot", "approval", "outbreak", "military", "conflict"
+}
 
 
 def slug_to_title(url: str) -> str:
@@ -110,16 +118,54 @@ def load_events(engine: Engine) -> list[EventRecord]:
     ]
 
 
+def tokenize(text: str) -> set[str]:
+    return {
+        token.lower()
+        for token in TOKEN_RE.findall(text)
+        if len(token) >= 3 and not token.isdigit() and token.lower() not in STOPWORDS
+    }
+
+
+def event_keywords(event: EventRecord) -> set[str]:
+    seed = " ".join(
+        filter(
+            None,
+            [
+                event.id.replace("_", " "),
+                event.name_ko,
+                event.name_en,
+                event.description,
+            ],
+        )
+    )
+    return tokenize(seed)
+
+
+def candidate_keywords(candidate: ArticleCandidate) -> set[str]:
+    seed = " ".join(filter(None, [candidate.title, candidate.summary or "", candidate.url]))
+    return tokenize(seed)
+
+
 def match_event(candidate: ArticleCandidate, events: Iterable[EventRecord]) -> str | None:
     for event in events:
         if event.source_url and candidate.url.rstrip("/") == event.source_url.rstrip("/"):
             return event.id
-    if candidate.published_at is None:
+    candidate_date = candidate.published_at.date() if candidate.published_at is not None else parse_url_date(candidate.url)
+    if candidate_date is None:
         return None
-    candidate_date = candidate.published_at.date()
-    closest: tuple[int, str] | None = None
+    if hasattr(candidate_date, "date"):
+        candidate_date = candidate_date.date()
+    candidate_terms = candidate_keywords(candidate)
+    closest: tuple[int, int, str] | None = None
     for event in events:
         delta = abs((candidate_date - event.event_date).days)
-        if delta <= 7 and (closest is None or delta < closest[0]):
-            closest = (delta, event.id)
-    return closest[1] if closest is not None else None
+        if delta > 7:
+            continue
+        keywords = event_keywords(event)
+        overlap = len(candidate_terms & keywords)
+        if overlap == 0:
+            continue
+        candidate_score = (-overlap, delta, event.id)
+        if closest is None or candidate_score < closest:
+            closest = candidate_score
+    return closest[2] if closest is not None else None

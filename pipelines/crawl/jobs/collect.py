@@ -10,12 +10,16 @@ from sqlalchemy import text
 from crawl.core import get_job_page, normalize_job_status, snapshot_job, submit_crawl_job
 from crawl.load import (
     backfill_event_windows,
+    backfill_reference_articles,
+    canonicalize_reference_articles,
     count_news_coverage,
     fetch_fear_greed_rows,
     fetch_jobs_for_processing,
     fetch_jobs_to_collect,
+    has_cloudflare_credentials,
     load_cached_snapshot,
     missing_event_ids,
+    reconcile_article_event_matches,
     upsert_articles,
     upsert_crawl_job,
     upsert_fear_greed,
@@ -170,16 +174,35 @@ def main() -> None:
         upsert_fear_greed(fetch_fear_greed_rows(fear_greed_url))
         backfill_event_windows()
 
+    reassigned, removed = reconcile_article_event_matches(events)
+    canonicalized = canonicalize_reference_articles(events)
+
+    backfilled = 0
     missing_ids = missing_event_ids()
     if missing_ids:
-        submit_reference_fallback(events, missing_ids)
-        collect_reference_results(events)
+        if has_cloudflare_credentials():
+            submit_reference_fallback(events, missing_ids)
+            collect_reference_results(events)
+            missing_ids = missing_event_ids()
+        if missing_ids:
+            backfilled = backfill_reference_articles(events, missing_ids)
+            if not has_cloudflare_credentials():
+                print(f"reference_fallback_skipped_missing_credentials={len(missing_ids)}")
+        extra_reassigned, extra_removed = reconcile_article_event_matches(events)
+        reassigned += extra_reassigned
+        removed += extra_removed
+        canonicalized += canonicalize_reference_articles(events)
+        final_missing_ids = missing_event_ids()
+        if final_missing_ids:
+            backfilled += backfill_reference_articles(events, final_missing_ids)
 
     article_count, covered_events, windows_with_fg = count_news_coverage()
     missing_count = len(missing_event_ids())
     print(
         f"articles={article_count} covered_events={covered_events} "
-        f"windows_with_fg={windows_with_fg} missing={missing_count}"
+        f"windows_with_fg={windows_with_fg} missing={missing_count} "
+        f"backfilled={backfilled} canonicalized={canonicalized} "
+        f"reassigned={reassigned} removed={removed}"
     )
 
 

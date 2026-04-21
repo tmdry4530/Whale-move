@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
@@ -8,7 +9,8 @@ from typing import Any
 
 from sqlalchemy import text
 
-from crawl.models import CrawlRecord, FearGreedRow, JobSnapshot, ParsedArticle
+from crawl.models import CrawlRecord, EventRecord, FearGreedRow, JobSnapshot, ParsedArticle
+from crawl.utils import match_event, parse_url_date, slug_to_title
 from pipelines.db import get_engine
 
 
@@ -194,3 +196,105 @@ def missing_event_ids() -> list[str]:
     with engine.connect() as connection:
         rows = connection.execute(query).all()
     return [str(row.id) for row in rows]
+
+
+def reconcile_article_event_matches(events: list[EventRecord]) -> tuple[int, int]:
+    engine = get_engine()
+    select_sql = text(
+        """
+        SELECT id, event_id, source, url, title, summary, published_at, language, crawl_job_id
+        FROM news_articles
+        ORDER BY id
+        """
+    )
+    update_sql = text("UPDATE news_articles SET event_id = :event_id WHERE id = :id")
+    delete_sql = text("DELETE FROM news_articles WHERE id = :id")
+
+    reassigned = 0
+    removed = 0
+
+    with engine.begin() as connection:
+        rows = connection.execute(select_sql).all()
+        for row in rows:
+            candidate_published_at = row.published_at or parse_url_date(row.url)
+            candidate = ParsedArticle(
+                event_id=row.event_id,
+                source=row.source,
+                url=row.url,
+                title=row.title,
+                summary=row.summary,
+                published_at=candidate_published_at,
+                language=row.language,
+                crawl_job_id=row.crawl_job_id,
+            )
+            matched_event_id = match_event(candidate, events)
+            if matched_event_id is None:
+                connection.execute(delete_sql, {"id": row.id})
+                removed += 1
+                continue
+            if matched_event_id != row.event_id:
+                connection.execute(update_sql, {"id": row.id, "event_id": matched_event_id})
+                reassigned += 1
+
+    return reassigned, removed
+
+
+def has_cloudflare_credentials() -> bool:
+    return bool(
+        os.environ.get("CLOUDFLARE_ACCOUNT_ID")
+        and os.environ.get("CLOUDFLARE_API_TOKEN")
+    )
+
+
+def backfill_reference_articles(events: list[EventRecord], event_ids: list[str]) -> int:
+    event_map = {event.id: event for event in events}
+    articles: list[ParsedArticle] = []
+    for event_id in event_ids:
+        event = event_map.get(event_id)
+        if event is None or not event.source_url:
+            continue
+        articles.append(
+            ParsedArticle(
+                event_id=event.id,
+                source="reference",
+                url=event.source_url,
+                title=event.name_en or slug_to_title(event.source_url),
+                summary=event.description,
+                published_at=parse_url_date(event.source_url),
+                language="en",
+                crawl_job_id=None,
+            )
+        )
+    upsert_articles(articles)
+    return len(articles)
+
+
+def canonicalize_reference_articles(events: list[EventRecord]) -> int:
+    engine = get_engine()
+    event_map = {event.id: event for event in events if event.source_url}
+    if not event_map:
+        return 0
+
+    select_sql = text(
+        """
+        SELECT DISTINCT event_id
+        FROM news_articles
+        WHERE source = 'reference'
+        """
+    )
+    delete_sql = text(
+        """
+        DELETE FROM news_articles
+        WHERE source = 'reference' AND event_id = :event_id
+        """
+    )
+
+    with engine.begin() as connection:
+        rows = connection.execute(select_sql).all()
+        event_ids = [str(row.event_id) for row in rows if str(row.event_id) in event_map]
+        for event_id in event_ids:
+            connection.execute(delete_sql, {"event_id": event_id})
+
+    if not event_ids:
+        return 0
+    return backfill_reference_articles(events, event_ids)

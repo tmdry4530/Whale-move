@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
-EVENTS_MD = ROOT / 'EVENTS.md'
+EVENTS_MD = ROOT / 'docs' / 'EVENTS.md'
 OUTPUT_SQL = ROOT / 'db' / 'seeds' / 'events.sql'
 
 FIELD_ORDER = (
@@ -66,7 +66,7 @@ def build_sql(events: list[dict[str, str]]) -> str:
         for column in FIELD_ORDER
         if column != 'id'
     )
-    return f"""-- Generated from EVENTS.md by db/seeds/load_events.py\nINSERT INTO events ({columns})\nVALUES\n{render_insert_rows(events)}\nON CONFLICT (id) DO UPDATE SET\n    {updates};\n"""
+    return f"""-- Generated from docs/EVENTS.md by db/seeds/load_events.py\nINSERT INTO events ({columns})\nVALUES\n{render_insert_rows(events)}\nON CONFLICT (id) DO UPDATE SET\n    {updates};\n"""
 
 
 def main() -> None:
@@ -79,9 +79,15 @@ def main() -> None:
         raise SystemExit(f'Expected 21 events, found {len(events)}')
 
     sql = build_sql(events)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(sql, encoding='utf-8')
-    print(f'Wrote {args.output.relative_to(ROOT)} with {len(events)} events')
+    output_path = args.output if args.output.is_absolute() else ROOT / args.output
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(sql, encoding='utf-8')
+    output_path = output_path.resolve()
+    try:
+        display_path = output_path.relative_to(ROOT)
+    except ValueError:
+        display_path = output_path
+    print(f'Wrote {display_path} with {len(events)} events')
 
 
 if __name__ == '__main__':
