@@ -38,3 +38,5 @@ whale_data/
 # Local OMX/codex state
 .omc/
 dogfood-output/
+# Agent instructions
+**/AGENTS.md
