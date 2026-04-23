@@ -150,7 +150,11 @@ def match_event(candidate: ArticleCandidate, events: Iterable[EventRecord]) -> s
     for event in events:
         if event.source_url and candidate.url.rstrip("/") == event.source_url.rstrip("/"):
             return event.id
-    candidate_date = candidate.published_at.date() if candidate.published_at is not None else parse_url_date(candidate.url)
+    candidate_date = (
+        candidate.published_at.date()
+        if candidate.published_at is not None
+        else parse_url_date(candidate.url)
+    )
     if candidate_date is None:
         return None
     if hasattr(candidate_date, "date"):

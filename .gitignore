@@ -35,4 +35,6 @@ whale_data/
 # Logs
 *.log
 
+# Local OMX/codex state
+.omc/
 dogfood-output/

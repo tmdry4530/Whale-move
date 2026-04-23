@@ -1,18 +1,26 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import type { PropsWithChildren } from 'react'
 
-type ChartLikeProps = { width?: number; height?: number }
-
-vi.mock('recharts', async () => {
-  const actual = await vi.importActual<typeof import('recharts')>('recharts')
-
-  return {
-    ...actual,
-    ResponsiveContainer: ({ children }: { children: React.ReactElement<ChartLikeProps> }) =>
-      React.cloneElement<ChartLikeProps>(children, { width: 960, height: 360 })
+function createMockComponent(label: string) {
+  return function MockComponent({ children }: PropsWithChildren) {
+    return <div data-testid={label}>{children}</div>
   }
-})
+}
+
+vi.mock('recharts', () => ({
+  ResponsiveContainer: createMockComponent('responsive-container'),
+  LineChart: createMockComponent('line-chart'),
+  Line: createMockComponent('line'),
+  ReferenceLine: createMockComponent('reference-line'),
+  Tooltip: createMockComponent('tooltip'),
+  XAxis: createMockComponent('x-axis'),
+  YAxis: createMockComponent('y-axis'),
+  CartesianGrid: createMockComponent('cartesian-grid'),
+  BarChart: createMockComponent('bar-chart'),
+  Bar: createMockComponent('bar'),
+  ComposedChart: createMockComponent('composed-chart')
+}))
 
 import { WindowChart } from '../src/features/event-detail/WindowChart'
 
@@ -58,11 +66,12 @@ describe('WindowChart', () => {
       />
     )
 
-    expect(screen.getByText('이벤트일')).toBeInTheDocument()
+    expect(screen.getAllByText('기준선 100 = 사건 전 7일 평균').length).toBeGreaterThan(0)
     expect(screen.getAllByText('고래 송금').length).toBeGreaterThan(0)
     expect(screen.getAllByText('거래소 입금').length).toBeGreaterThan(0)
     expect(screen.getAllByText('거래소 출금').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('공포·탐욕 지수').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('거래소 순유입').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('시장 컨텍스트').length).toBeGreaterThan(0)
     expect(screen.getAllByText('뉴스 볼륨').length).toBeGreaterThan(0)
   })
 })

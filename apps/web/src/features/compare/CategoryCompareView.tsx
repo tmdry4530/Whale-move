@@ -1,4 +1,4 @@
-import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Fragment } from 'react'
 import type { z } from 'zod'
 
 import { SectionCard } from '../../components/SectionCard'
@@ -6,7 +6,8 @@ import { useCategoryWindows } from '../../api/endpoints'
 import type { eventSchema } from '../../api/schemas'
 import {
   buildCategoryComparisonData,
-  buildRegionComparisonData
+  buildRegionComparisonData,
+  type CategoryComparisonDatum
 } from '../../lib/eventAnalysis'
 
 type EventRecord = z.infer<typeof eventSchema>
@@ -25,12 +26,12 @@ const comparisonHypotheses = [
   {
     id: 'h3',
     title: '가설 3',
-    summary: '위기·폭락 카테고리에서는 입금과 출금이 함께 커져 자금 재배치가 나타난다.'
+    summary: '위기·폭락 구간은 입금과 출금이 함께 커지며 재배치를 보인다.'
   },
   {
     id: 'h4',
     title: '가설 4',
-    summary: '사건 후 7일 가격 변화는 시장이 사건을 어떻게 해석했는지 보여준다.'
+    summary: '사건 후 7일 가격 변화는 시장 해석을 보여준다.'
   },
   {
     id: 'h5',
@@ -39,44 +40,124 @@ const comparisonHypotheses = [
   }
 ]
 
-function ComparisonChart({
+const comparisonColumns = [
+  { key: 'inflowChangePct', label: '입금', helper: '사건일' },
+  { key: 'outflowChangePct', label: '출금', helper: '사건일' },
+  { key: 'whaleChangePct', label: '고래 송금', helper: '사건일' },
+  { key: 'priceChangePct', label: 'ETH 가격', helper: '사건 후 7일' }
+] as const
+
+function formatSignedPct(value: number): string {
+  const rounded = value.toFixed(1)
+  return `${value > 0 ? '+' : ''}${rounded}%`
+}
+
+function heatColor(value: number): string {
+  if (value >= 100) return 'bg-emerald-400/30 text-emerald-50 border-emerald-300/40'
+  if (value >= 30) return 'bg-emerald-400/18 text-emerald-50 border-emerald-300/30'
+  if (value >= 5) return 'bg-emerald-400/8 text-emerald-50 border-emerald-300/20'
+  if (value <= -30) return 'bg-rose-400/22 text-rose-50 border-rose-300/35'
+  if (value <= -5) return 'bg-rose-400/10 text-rose-50 border-rose-300/20'
+  return 'bg-white/5 text-brand-text border-white/10'
+}
+
+function strongestMetric(
+  data: CategoryComparisonDatum[],
+  key: keyof CategoryComparisonDatum
+): CategoryComparisonDatum | null {
+  if (data.length === 0) return null
+  return [...data].sort((left, right) => Number(right[key]) - Number(left[key]))[0] ?? null
+}
+
+function ComparisonHeatmap({
   title,
   description,
   data
 }: {
   title: string
   description: string
-  data: Array<{
-    label: string
-    whaleChangePct: number
-    inflowChangePct: number
-    outflowChangePct: number
-    priceChangePct: number
-  }>
+  data: CategoryComparisonDatum[]
 }) {
   return (
     <div className="border border-brand-border bg-[#10141d] p-4">
       <h3 className="text-lg font-body text-brand-text">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-brand-muted font-body">{description}</p>
-      <div className="mt-4 overflow-x-auto">
-        <div className="h-[300px] min-w-[640px] w-full">
-          <ResponsiveContainer>
-            <BarChart data={data}>
-            <CartesianGrid stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
-            <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" />
-            <XAxis dataKey="label" tick={{ fill: 'rgba(255, 255, 255, 0.65)', fontFamily: 'var(--font-body)' }} />
-            <YAxis tick={{ fill: 'rgba(255, 255, 255, 0.65)', fontFamily: 'var(--font-body)' }} tickFormatter={(value) => `${Number(value).toFixed(0)}%`} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#0b0d12', border: '1px solid rgba(255, 255, 255, 0.24)', borderRadius: 0, fontFamily: 'var(--font-body)', color: '#fff' }}
-              formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
-            />
-            <Bar dataKey="inflowChangePct" fill="#f59e0b" name="입금 변화율" />
-            <Bar dataKey="outflowChangePct" fill="#10b981" name="출금 변화율" />
-            <Bar dataKey="whaleChangePct" fill="#38bdf8" name="고래 송금 변화율" />
-            <Bar dataKey="priceChangePct" fill="#e879f9" name="사건 후 7일 ETH 변화율" />
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="mt-4 space-y-3 md:hidden">
+        <div className="rounded-none border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs leading-relaxed text-cyan-100 font-body">
+          모바일에서는 표 대신 카드형 비교로 보여준다. 각 카드는 한 구간의 입금·출금·고래 송금·가격 반응을 순서대로 읽게 구성했다.
         </div>
+        {data.map((row) => (
+          <article key={`${row.label}-mobile`} className="border border-brand-border bg-brand-surface p-4">
+            <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">{row.label}</div>
+            <div className="mt-3 grid gap-2">
+              {comparisonColumns.map((column) => {
+                const value = row[column.key]
+                return (
+                  <div
+                    key={`${row.label}-mobile-${column.key}`}
+                    className={`border px-3 py-3 ${heatColor(value)}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-body">{column.label}</div>
+                        <div className="mt-1 text-xs font-body opacity-70">{column.helper}</div>
+                      </div>
+                      <div className="text-lg font-body">{formatSignedPct(value)}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="mt-4 hidden md:block">
+        <div className="mb-3 rounded-none border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs leading-relaxed text-cyan-100 font-body">
+          넓은 화면에서는 같은 축의 표로 비교한다. 화면이 좁으면 표 전체가 보이도록 가로 스크롤이 활성화된다.
+        </div>
+        <div className="overflow-x-auto pb-2">
+          <div className="min-w-[760px]">
+          <div className="grid grid-cols-[160px_repeat(4,minmax(0,1fr))] gap-2">
+            <div className="border border-brand-border bg-brand-surface px-3 py-3 font-display text-[11px] uppercase tracking-[1px] text-brand-muted">
+              구간
+            </div>
+            {comparisonColumns.map((column) => (
+              <div
+                key={column.key}
+                className="border border-brand-border bg-brand-surface px-3 py-3"
+              >
+                <div className="font-display text-[11px] uppercase tracking-[1px] text-brand-muted">
+                  {column.label}
+                </div>
+                <div className="mt-1 text-xs text-brand-muted font-body">{column.helper}</div>
+              </div>
+            ))}
+            {data.map((row) => (
+              <Fragment key={row.label}>
+                <div
+                  className="border border-brand-border bg-brand-surface px-3 py-3 text-sm font-body text-brand-text"
+                >
+                  {row.label}
+                </div>
+                {comparisonColumns.map((column) => {
+                  const value = row[column.key]
+                  return (
+                    <div
+                      key={`${row.label}-${column.key}`}
+                      className={`border px-3 py-3 ${heatColor(value)}`}
+                    >
+                      <div className="text-lg font-body">{formatSignedPct(value)}</div>
+                      <div className="mt-1 text-xs font-body opacity-70">
+                        전 7일 평균 대비
+                      </div>
+                    </div>
+                  )
+                })}
+              </Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   )
@@ -93,16 +174,15 @@ export function CategoryCompareView({ events }: { events: EventRecord[] }) {
 
   const categoryData = buildCategoryComparisonData(responses)
   const regionData = buildRegionComparisonData(responses)
+  const strongestInflow = strongestMetric(categoryData, 'inflowChangePct')
+  const strongestOutflow = strongestMetric(categoryData, 'outflowChangePct')
+  const strongestPrice = strongestMetric(categoryData, 'priceChangePct')
 
   return (
     <SectionCard title="가설 검증 비교실" eyebrow="이벤트 비교">
       <p className="mb-6 text-base text-brand-muted font-body leading-relaxed">
-        이 탭은 사건 하나를 자세히 보는 대신, 여러 사건을 평균내어 가설이 전체적으로도 반복되는지 확인하는 곳이다.
-        노란·초록·파란 막대는 <span className="font-semibold text-brand-text">사건 전 7일 평균 대비 사건일 변화율</span>,
-        보라 막대는 <span className="font-semibold text-brand-text">사건 전 7일 평균 대비 사건 후 7일 가격 변화율</span>을 뜻한다.
-      </p>
-      <p className="mb-6 text-sm leading-relaxed text-brand-muted font-body">
-        모바일에서는 비교 차트를 좌우로 밀어 보면 카테고리 레이블과 막대 간격을 더 편하게 읽을 수 있다.
+        이 화면은 막대 수를 늘리기보다, 어떤 구간이 어떤 지표에서 강하게 반응했는지를 한 번에 읽도록 구성했다.
+        각 셀의 값은 <span className="font-semibold text-brand-text">사건 전 7일 평균 대비 변화율</span>이다.
       </p>
 
       {hasLoading ? (
@@ -113,7 +193,7 @@ export function CategoryCompareView({ events }: { events: EventRecord[] }) {
 
       {hasError ? (
         <div className="mb-6 border border-red-300/40 bg-red-300/10 p-4 text-sm leading-relaxed text-red-100 font-body">
-          일부 비교 데이터가 비어 있어 평균 막대가 부분 집계로 보일 수 있다.
+          일부 비교 데이터가 비어 있어 표의 수치는 부분 집계일 수 있다.
         </div>
       ) : null}
 
@@ -126,15 +206,39 @@ export function CategoryCompareView({ events }: { events: EventRecord[] }) {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <ComparisonChart
-          title="카테고리별 사건일 변화율"
-          description="폭락·위기·호재·과열·규제 이벤트를 평균낸 뒤, 거래소 입금·출금·고래 송금이 얼마나 튀었는지 비교했다."
+      <div className="grid gap-4 xl:grid-cols-3">
+        <div className="border border-brand-border bg-brand-surface p-4">
+          <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">가장 강한 입금 반응</div>
+          <div className="mt-3 text-[22px] font-body text-brand-text">{strongestInflow?.label ?? '데이터 없음'}</div>
+          <p className="mt-2 text-sm font-body text-brand-muted">
+            {strongestInflow ? `${formatSignedPct(strongestInflow.inflowChangePct)}로 가장 크게 튄 구간` : '비교 데이터 부족'}
+          </p>
+        </div>
+        <div className="border border-brand-border bg-brand-surface p-4">
+          <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">가장 강한 출금 반응</div>
+          <div className="mt-3 text-[22px] font-body text-brand-text">{strongestOutflow?.label ?? '데이터 없음'}</div>
+          <p className="mt-2 text-sm font-body text-brand-muted">
+            {strongestOutflow ? `${formatSignedPct(strongestOutflow.outflowChangePct)}로 가장 크게 튄 구간` : '비교 데이터 부족'}
+          </p>
+        </div>
+        <div className="border border-brand-border bg-brand-surface p-4">
+          <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">가장 강한 가격 해석</div>
+          <div className="mt-3 text-[22px] font-body text-brand-text">{strongestPrice?.label ?? '데이터 없음'}</div>
+          <p className="mt-2 text-sm font-body text-brand-muted">
+            {strongestPrice ? `사건 후 7일 ${formatSignedPct(strongestPrice.priceChangePct)}` : '비교 데이터 부족'}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 2xl:grid-cols-2">
+        <ComparisonHeatmap
+          title="카테고리별 반응 히트맵"
+          description="폭락·위기·호재·과열·규제 이벤트를 평균냈을 때, 사건일과 사건 후 7일에 무엇이 가장 크게 반응했는지 본다."
           data={categoryData}
         />
-        <ComparisonChart
-          title="지역별 사건일 변화율"
-          description="글로벌 사건과 한국 사건을 나눠 보면, 어느 쪽이 더 큰 온체인 재배치를 만드는지 읽을 수 있다."
+        <ComparisonHeatmap
+          title="지역별 반응 히트맵"
+          description="글로벌과 한국 이벤트를 같은 축으로 비교해, 어느 쪽이 더 거칠게 흔들리는지 확인한다."
           data={regionData}
         />
       </div>
@@ -142,8 +246,8 @@ export function CategoryCompareView({ events }: { events: EventRecord[] }) {
       <div className="mt-4 border border-brand-border bg-brand-surface p-4">
         <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">읽는 법</div>
         <p className="mt-2 text-sm leading-relaxed text-brand-muted font-body">
-          노란 막대는 거래소 입금, 초록 막대는 거래소 출금, 파란 막대는 고래 송금, 보라 막대는 사건 후 7일 ETH 변화율이다.
-          0% 위로 올라갈수록 사건일 또는 사건 이후 반응이 평소보다 강했다는 뜻이고, 아래로 내려가면 평소보다 약했다는 뜻이다.
+          초록에 가까울수록 기준선보다 더 크게 상승한 반응이고, 붉을수록 기준선보다 약하거나 반대 방향으로 움직인 반응이다.
+          같은 행을 가로로 읽으면 한 이벤트 성격에서 무엇이 먼저 반응했는지, 같은 열을 세로로 읽으면 어떤 구간이 특정 지표에 예민한지 보인다.
         </p>
       </div>
     </SectionCard>

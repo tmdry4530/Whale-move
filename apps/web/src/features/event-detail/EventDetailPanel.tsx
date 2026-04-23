@@ -66,7 +66,7 @@ export function EventDetailPanel({ eventId }: { eventId: string | null }) {
         {hypothesisCards.map((card) => (
           <article key={card.id} className="border border-brand-border bg-[#10141d] p-4">
             <div className="font-display text-[12px] uppercase tracking-[1px] text-brand-muted">{card.badge}</div>
-            <h3 className="mt-2 text-lg font-body text-brand-text">{card.title}</h3>
+            <h3 className="mt-2 text-lg font-body text-brand-text break-keep leading-snug">{card.title}</h3>
             <dl className="mt-4 space-y-3 text-sm leading-relaxed font-body">
               <div>
                 <dt className="font-display text-[11px] uppercase tracking-[1px] text-sky-200">가설</dt>
@@ -160,8 +160,9 @@ export function EventDetailPanel({ eventId }: { eventId: string | null }) {
         <div className="mb-3">
           <h3 className="text-[22px] font-body text-brand-text">가설 검증 그래프</h3>
           <p className="mt-2 text-base leading-relaxed text-brand-muted font-body">
-            노란 선이 사건일이다. 왼쪽 음수 구간은 사건 전 7일, 오른쪽 양수 구간은 사건 후 7일을 뜻한다.
-            그래프의 급한 솟음과 꺾임이 각 가설의 근거다. 모바일에서는 차트를 좌우로 밀어 축 레이블을 더 선명하게 볼 수 있다.
+            첫 번째 패널은 사건 전 7일 평균을 100으로 둔 정규화 그래프라서, 어떤 지표가 평소 대비 더 크게 튀었는지 바로 읽을 수 있다.
+            두 번째 패널은 거래소 순유입, 세 번째 패널은 가격·심리·뉴스 같은 보조 맥락이다.
+            모바일에서는 차트를 좌우로 밀어 축 레이블을 더 선명하게 볼 수 있다.
           </p>
         </div>
         <WindowChart rows={windowQuery.data.window} />

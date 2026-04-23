@@ -50,6 +50,22 @@ export type CategoryComparisonDatum = {
   priceChangePct: number
 }
 
+export type IndexedWindowDatum = {
+  dayOffset: number
+  date: string
+  whaleVolumeUsdNumber: number | null
+  cexInflowUsdNumber: number | null
+  cexOutflowUsdNumber: number | null
+  ethPriceUsdNumber: number | null
+  fearGreedValueNumber: number | null
+  newsVolumeNumber: number
+  whaleIndex: number | null
+  inflowIndex: number | null
+  outflowIndex: number | null
+  ethPriceIndex: number | null
+  exchangeNetflowUsd: number | null
+}
+
 export function toNumber(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) return null
   const parsed = typeof value === 'number' ? value : Number(value)
@@ -65,6 +81,11 @@ function average(values: Array<number | null>): number | null {
 function percentChange(current: number | null, baseline: number | null): number | null {
   if (current === null || baseline === null || baseline === 0) return null
   return ((current - baseline) / baseline) * 100
+}
+
+function indexValue(current: number | null, baseline: number | null): number | null {
+  if (current === null || baseline === null || baseline === 0) return null
+  return (current / baseline) * 100
 }
 
 function buildMetricSnapshot(rows: EventWindow[], key: MetricKey): MetricSnapshot {
@@ -120,6 +141,41 @@ export function analyzeEventWindow(rows: EventWindow[]): EventAnalysisSummary {
     peakOutflow: peakMetric(rows, 'cexOutflowUsd'),
     peakNewsVolume: rows.reduce((peak, row) => Math.max(peak, row.newsVolume), 0)
   }
+}
+
+export function buildIndexedWindow(rows: EventWindow[]): IndexedWindowDatum[] {
+  const beforeRows = rows.filter((row) => row.dayOffset >= -7 && row.dayOffset <= -1)
+
+  const whaleBaseline = average(beforeRows.map((row) => toNumber(row.whaleVolumeUsd)))
+  const inflowBaseline = average(beforeRows.map((row) => toNumber(row.cexInflowUsd)))
+  const outflowBaseline = average(beforeRows.map((row) => toNumber(row.cexOutflowUsd)))
+  const priceBaseline = average(beforeRows.map((row) => toNumber(row.ethPriceUsd)))
+
+  return rows.map((row) => {
+    const whaleVolumeUsdNumber = toNumber(row.whaleVolumeUsd)
+    const cexInflowUsdNumber = toNumber(row.cexInflowUsd)
+    const cexOutflowUsdNumber = toNumber(row.cexOutflowUsd)
+    const ethPriceUsdNumber = toNumber(row.ethPriceUsd)
+
+    return {
+      dayOffset: row.dayOffset,
+      date: row.date,
+      whaleVolumeUsdNumber,
+      cexInflowUsdNumber,
+      cexOutflowUsdNumber,
+      ethPriceUsdNumber,
+      fearGreedValueNumber: row.fearGreedValue,
+      newsVolumeNumber: row.newsVolume,
+      whaleIndex: indexValue(whaleVolumeUsdNumber, whaleBaseline),
+      inflowIndex: indexValue(cexInflowUsdNumber, inflowBaseline),
+      outflowIndex: indexValue(cexOutflowUsdNumber, outflowBaseline),
+      ethPriceIndex: indexValue(ethPriceUsdNumber, priceBaseline),
+      exchangeNetflowUsd:
+        cexInflowUsdNumber === null || cexOutflowUsdNumber === null
+          ? null
+          : cexInflowUsdNumber - cexOutflowUsdNumber
+    }
+  })
 }
 
 export function classifyVerdict(value: number | null, direction: 'increase' | 'decrease'): HypothesisVerdict {

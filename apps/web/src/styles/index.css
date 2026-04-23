@@ -1,5 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+
+@font-face {
+    font-family: 'GmarketSans';
+    font-weight: 300;
+    font-style: normal;
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff') format('woff');
+}
+@font-face {
+    font-family: 'GmarketSans';
+    font-weight: 500;
+    font-style: normal;
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+}
+@font-face {
+    font-family: 'GmarketSans';
+    font-weight: 700;
+    font-style: normal;
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+}
+
 @import "tailwindcss";
 
 @theme {
@@ -11,8 +30,8 @@
   --color-brand-surface: rgba(255, 255, 255, 0.03);
   --color-brand-surface-hover: rgba(255, 255, 255, 0.08);
 
-  --font-display: "GeistMono", ui-monospace, SFMono-Regular, "Roboto Mono", Menlo, Monaco, "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace;
-  --font-body: "universalSans", "Inter", system-ui, sans-serif;
+  --font-display: "Quicksand", "GmarketSans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "GmarketSans", "Quicksand", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {

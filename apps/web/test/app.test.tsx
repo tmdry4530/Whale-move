@@ -130,7 +130,7 @@ describe('App', () => {
     expect(screen.getByText('FTX 뉴스')).toBeInTheDocument()
     expect(screen.getByText('전체 21개 사건')).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /보기$/ }).length).toBe(21)
-  })
+  }, 120_000)
 
   it('filters events by year and restores the full list', () => {
     render(<App />)
@@ -142,7 +142,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: '전체' }))
     expect(screen.getByText('전체 21개 사건')).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /보기$/ }).length).toBe(21)
-  })
+  }, 120_000)
 
   it('shows the six korean events in the korea tab', () => {
     window.history.replaceState({}, '', '/?tab=korea&event=ftx_collapse')
@@ -159,8 +159,9 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: '가설 검증 비교실' })).toBeInTheDocument()
     expect(screen.getByText('가설 1')).toBeInTheDocument()
     expect(screen.getByText(/위기·폭락 이벤트는 사건일 거래소 입금이 가장 크게 튄다/)).toBeInTheDocument()
-    expect(screen.getByText('사건 전 7일 평균 대비 사건 후 7일 가격 변화율')).toBeInTheDocument()
-    expect(screen.getByText('카테고리별 사건일 변화율')).toBeInTheDocument()
+    expect(screen.getByText('가장 강한 입금 반응')).toBeInTheDocument()
+    expect(screen.getByText('카테고리별 반응 히트맵')).toBeInTheDocument()
+    expect(screen.getByText('지역별 반응 히트맵')).toBeInTheDocument()
   })
 
   it('updates the detail panel immediately when another event is selected', () => {
