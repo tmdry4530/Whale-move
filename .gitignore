@@ -29,7 +29,12 @@ pipelines/data/crawled/
 pipelines/data/processed/
 pipelines/data/raw/
 exchange_flow_data/
+!exchange_flow_data/
+!exchange_flow_data/*.csv
 price_data/
+!price_data/
+price_data/*
+!price_data/eth_price.csv
 whale_data/
 
 # Logs
